@@ -103,7 +103,7 @@ interface Event {
      * An object which provides [Subscription]s to specific [Event]s
      */
     interface Participant {
-        fun subscribe(): Collection<Subscription> = Collections.emptySet()
+        fun subscribe(): Collection<Subscription>
     }
 }
 
