@@ -51,7 +51,7 @@ interface Event {
          */
         fun participate(participant: Participant): AutoCloseable {
             if (participants.containsKey(participant)) throw IllegalArgumentException("A participant may only participate once!")
-            val subscriptions = participant.subscribe()
+            val subscriptions = participant.subscribe(this)
             participants.putAll(participant, subscriptions)
             return AutoCloseable { withdraw(participant) }
         }
@@ -125,7 +125,7 @@ interface Event {
      * An object which provides [Subscription]s to specific [Event]s
      */
     interface Participant {
-        fun subscribe(): Collection<Subscription>
+        fun subscribe(transport: Transport<*>): Collection<Subscription>
     }
 }
 
