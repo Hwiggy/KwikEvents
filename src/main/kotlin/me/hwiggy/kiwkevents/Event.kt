@@ -52,13 +52,13 @@ interface Event {
             if (participants.containsKey(participant)) throw IllegalArgumentException("A participant may only participate once!")
             val subscriptions = participant.subscribe()
             participants.putAll(participant, subscriptions)
-            return AutoCloseable { abandon(participant) }
+            return AutoCloseable { withdraw(participant) }
         }
 
         /**
          * A means of closing the [Participant] without them needing to track their [AutoCloseable]
          */
-        fun abandon(participant: Participant) {
+        fun withdraw(participant: Participant) {
             participants.removeAll(participant).forEach(Closeable::close)
         }
 
