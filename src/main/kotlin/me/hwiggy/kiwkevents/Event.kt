@@ -64,6 +64,7 @@ interface Event {
 
         /**
          * Subscribes to events incoming to the [Transport] using a custom [Handler] implementation
+         * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
         fun <TEvent : Event> subscribe(type: Class<TEvent>, handler: Handler<TEvent>): Subscription {
             listeners.put(type, handler)
@@ -72,11 +73,13 @@ interface Event {
 
         /**
          * @see subscribe(Class, Handler)
+         * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
         inline fun <reified TEvent : Event> subscribe(handler: Handler<TEvent>) = subscribe(TEvent::class.java, handler)
 
         /**
          * Subscribes to events incoming to the [Transport] using an anonymous [Handler] implementation
+         * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
         fun <TEvent : Event> subscribe(
             type: Class<TEvent>,
@@ -91,6 +94,7 @@ interface Event {
 
         /**
          * @see subscribe(Class, Priority, Boolean, Consumer<TEvent>)
+         * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
         inline fun <reified TEvent : Event> subscribe(
             priority: Priority = Priority.NORMAL,
