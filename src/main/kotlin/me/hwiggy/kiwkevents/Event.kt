@@ -26,7 +26,7 @@ interface Event {
     /**
      * Responsible for dispatching events to the relevant handlers, as well as maintaining [Subscription]s
      */
-    @Suppress("UNCHECKED_CAST") object Transport {
+    @Suppress("UNCHECKED_CAST") open class Transport {
         private val participants = Multimaps.newSetMultimap<Participant, Closeable>(IdentityHashMap(), ::HashSet)
         private val listeners: Multimap<Class<*>, Handler<*>> = Multimaps.newSetMultimap(
             IdentityHashMap()
@@ -36,6 +36,7 @@ interface Event {
          * Submits an event to the [Transport], invoking the [Handler]s in order of their [Priority]
          */
         fun <TEvent : Event> submit(event: TEvent) {
+            if (!shouldAccept(event)) return
             val type = event::class.java
             val handlers = (listeners[type] ?: return) as Collection<Handler<TEvent>>
             handlers.forEach { handler ->
@@ -101,7 +102,17 @@ interface Event {
             ignoreCancelled: Boolean = false,
             noinline block: (TEvent) -> Unit
         ) = subscribe(TEvent::class.java, priority, ignoreCancelled, block)
+
+        /**
+         * Whether this [Transport] should accept a specific [TEvent]
+         */
+        open fun <TEvent : Event> shouldAccept(event: TEvent): Boolean = true
     }
+
+    /**
+     * The global [Transport], accepts all [Event]s indiscriminately
+     */
+    object GlobalTransport : Transport()
 
     /**
      * An object which provides [Subscription]s to specific [Event]s
