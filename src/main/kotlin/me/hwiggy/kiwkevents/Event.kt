@@ -18,7 +18,7 @@ interface Event {
     /**
      * Executor of all incoming event logic
      */
-    interface Handler<TEvent> : (TEvent) -> Unit {
+    fun interface Handler<TEvent> : (TEvent) -> Unit {
         fun priority() = Priority.NORMAL
         fun ignoreCancelled() = false
     }
@@ -26,7 +26,7 @@ interface Event {
     /**
      * Responsible for dispatching events to the relevant handlers, as well as maintaining [Subscription]s
      */
-    @Suppress("UNCHECKED_CAST") open class Transport<TEvent : Any> {
+    @Suppress("UNCHECKED_CAST") abstract class Transport<TEvent : Any> {
         private val participants = Multimaps.newSetMultimap<Participant, Closeable>(IdentityHashMap(), ::HashSet)
         private val listeners: Multimap<Class<*>, Handler<*>> = Multimaps.newSetMultimap(
             IdentityHashMap()
@@ -37,7 +37,7 @@ interface Event {
          */
         fun submit(event: TEvent) {
             if (!shouldAccept(event)) return
-            val type = event::class.java
+            val type = digestType(event)
             val handlers = (listeners[type] ?: return) as Collection<Handler<TEvent>>
             handlers.forEach { handler ->
                 if (event is Cancellable && event.cancelled && !handler.ignoreCancelled()) return@forEach
@@ -67,7 +67,7 @@ interface Event {
          * Subscribes to events incoming to the [Transport] using a custom [Handler] implementation
          * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
-        fun <REvent : TEvent> subscribe(type: Class<REvent>, handler: Handler<REvent>): Subscription {
+        fun subscribe(type: Class<*>, handler: Handler<out TEvent>): Subscription {
             listeners.put(type, handler)
             return Closeable { listeners.remove(type, handler) }
         }
@@ -76,14 +76,14 @@ interface Event {
          * @see subscribe(Class, Handler)
          * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
-        inline fun <reified REvent : TEvent> subscribe(handler: Handler<REvent>) = subscribe(REvent::class.java, handler)
+        inline fun <reified REvent : TEvent> subscribe(handler: Handler<TEvent>) = subscribe(REvent::class.java, handler)
 
         /**
          * Subscribes to events incoming to the [Transport] using an anonymous [Handler] implementation
          * @see [Participant] for a means of keeping track of returned [Subscription]s
          */
         fun <REvent : TEvent> subscribe(
-            type: Class<REvent>,
+            type: Class<*>,
             priority: Priority = Priority.NORMAL,
             ignoreCancelled: Boolean = false,
             block: (REvent) -> Unit
@@ -107,12 +107,19 @@ interface Event {
          * Whether this [Transport] should accept a specific [TEvent]
          */
         open fun shouldAccept(event: TEvent): Boolean = true
+
+        /**
+         * Digests the received [Event] into its key for finding [Handler]s
+         */
+        abstract fun digestType(event: TEvent): Class<*>
     }
 
     /**
      * The global [Transport], accepts all [Event]s indiscriminately
      */
-    object GlobalTransport : Transport<Event>()
+    object GlobalTransport : Transport<Event>() {
+        override fun digestType(event: Event) = event::class.java
+    }
 
     /**
      * An object which provides [Subscription]s to specific [Event]s

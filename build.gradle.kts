@@ -12,7 +12,7 @@ val properties = Properties().also {
 }
 
 group = "me.hwiggy"
-version = "1.1-SNAPSHOT"
+version = "1.1.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -50,6 +50,7 @@ publishing {
     publications {
         create<MavenPublication>("assembly") {
             from(components["java"])
+            artifact(tasks.kotlinSourcesJar)
         }
     }
 }
