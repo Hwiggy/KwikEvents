@@ -38,7 +38,7 @@ interface Event {
         fun submit(event: TEvent) {
             if (!shouldAccept(event)) return
             val type = digestType(event)
-            val handlers = (listeners[type] ?: return) as Collection<Handler<TEvent>>
+            val handlers = listeners[type] as? Collection<Handler<TEvent>> ?: return
             handlers.forEach { handler ->
                 if (event is Cancellable && event.cancelled && !handler.ignoreCancelled()) return@forEach
                 handler.invoke(event)
